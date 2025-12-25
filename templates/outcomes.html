@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Outcomes for {{ metric.name }}</h2>
+
+{% if metric.outcomes | length == 0 %}
+  <h3>Add {{ metric.k }} outcome(s)</h3>
+  <form method="post">
+    <table>
+      <tr>
+        <th>Label</th>
+        <th>Ordinal Value (0–1)</th>
+      </tr>
+
+      {% for i in range(metric.k) %}
+      <tr>
+        <td>
+          <input type="text" name="label_{{ i }}" required>
+        </td>
+        <td>
+          <input type="number" step="0.01" min="0" max="1" name="ordinal_value_{{ i }}" required>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+
+    <small>
+      Labels and ordinal values must be unique. Ordinal values define outcome ordering.
+    </small>
+    <br><br>
+
+    <button type="submit">Save Outcomes</button>
+  </form>
+{% else %}
+  <p><strong>Outcomes for this metric are already defined and cannot be modified.</strong></p>
+{% endif %}
+
+<h3>Existing Outcomes</h3>
+<ul>
+  {% for o in metric.outcomes | sort(attribute='ordinal_value') %}
+    <li>{{ o.label }} → {{ o.ordinal_value }}</li>
+  {% endfor %}
+</ul>
+
+{% endblock %}

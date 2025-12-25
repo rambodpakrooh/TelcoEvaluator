@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Evaluation Run {{ run.id }}</h2>
+  <p>Status: {{ run.status }}</p>
+  <p>Created at: {{ run.created_at }}</p>
+
+  <h3>Dirichlet States</h3>
+  <p>Total states: {{ states|length }}</p>
+
+  <table border="1" cellpadding="5">
+      <tr>
+          <th>HCP</th>
+          <th>Metric</th>
+          <th>Alpha (Dirichlet)</th>
+      </tr>
+      {% for s in states %}
+      <tr>
+          <td>{{ s.hcp.name if s.hcp else s.hcp_id }}</td>
+          <td>{{ s.metric.name if s.metric else s.metric_id }}</td>
+          <td>{{ s.alpha }}</td>
+      </tr>
+      {% endfor %}
+  </table>
+
+  <h3>Metric Results</h3>
+
+  <table border="1" cellpadding="5">
+    <tr>
+      <th>HCP</th>
+      <th>Metric</th>
+      <th>Expected Value</th>
+      <th>Confidence</th>
+      <th>Expected &times Confidence</th>
+    </tr>
+    {% for mv in metric_values %}
+    <tr>
+      <td>{{ mv.hcp.name }}</td>
+      <td>{{ mv.metric.name }}</td>
+      <td>{{ "%.4f"|format(mv.expected_value) }}</td>
+      <td>{{ "%.4f"|format(mv.confidence) }}</td>
+      <td>{{ "%.4f"|format(mv.expected_value * mv.confidence) }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <h3>Dimension Scores</h3>
+
+  <table border="1" cellpadding="5">
+    <tr>
+      <th>HCP</th>
+      <th>Dimension</th>
+      <th>Score</th>
+    </tr>
+    {% for hcp, dims in dimension_scores.items() %}
+      {% for dim, score in dims.items() %}
+      <tr>
+        <td>{{ hcp.name }}</td>
+        <td>{{ dim.name }}</td>
+        <td>{{ "%.4f"|format(score) }}</td>
+      </tr>
+      {% endfor %}
+    {% endfor %}
+  </table>
+
+  <h3>Total Trust Score</h3>
+
+  <table border="1" cellpadding="5">
+    <tr>
+      <th>HCP</th>
+      <th>Total Trust Score</th>
+    </tr>
+    {% for hcp, score in total_scores.items() %}
+    <tr>
+      <td>{{ hcp.name }}</td>
+      <td><strong>{{ "%.4f"|format(score) }}</strong></td>
+    </tr>
+    {% endfor %}
+  </table>
+
+
+{% endblock %}

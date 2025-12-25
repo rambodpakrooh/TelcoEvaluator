@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Create Metric for {{ dimension.name }}</h2>
+
+<form method="post">
+
+  <label>Name:</label>
+  <input type="text" name="name" required><br>
+
+  <label>Description:</label><br>
+  <textarea name="description" rows="3" cols="40"></textarea><br>
+
+  <label>Weight (1-5):</label>
+  <input type="number" name="weight" min="1" max="5" step="1" value="1"><br>
+
+  <label>Number of outcomes (k):</label>
+  <input type="number" name="k" min="2" value="2"><br><br>
+  <small>
+    You must define exactly <b>k</b> outcomes (with labels and ordinal values) after creating the metric.
+  </small>
+  <br><br>
+
+  <button type="submit">Create Metric</button>
+
+</form>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>HCP Providers</h2>
+
+<form method="post">
+  <label>Name:</label><br>
+  <input type="text" name="name" required><br><br>
+
+  <label>Description:</label><br>
+  <textarea name="description" rows="3" cols="40"></textarea><br><br>
+
+  <button type="submit">Add HCP</button>
+</form>
+
+<hr>
+
+<h3>Existing HCPs</h3>
+<ul>
+  {% for h in hcps %}
+    <li>
+      {{ h.name }}{% if h.description %} — {{ h.description }}{% endif %}
+    </li>
+  {% endfor %}
+</ul>
+
+{% endblock %}

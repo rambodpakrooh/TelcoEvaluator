@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Metrics</h2>
+
+{% for dim in dimensions %}
+  <h3>{{ dim.name }} (weight={{ dim.weight }})</h3>
+
+  <ul>
+    {% if dim.metrics %}
+      {% for m in dim.metrics %}
+        <li>
+          {{ m.name }} (w={{ m.weight }}, k={{ m.k }})
+          — <a href="{{ url_for('edit_metric', metric_id=m.id) }}">Edit</a>
+          — <a href="{{ url_for('add_outcomes', metric_id=m.id) }}">Outcomes</a>
+          <small>(labels & ordinal values)</small>
+        </li>
+      {% endfor %}
+    {% else %}
+      <li><em>No metrics defined yet.</em></li>
+    {% endif %}
+  </ul>
+
+  <a href="{{ url_for('create_metric', dimension_id=dim.id) }}">Add metric</a>
+  <hr>
+{% endfor %}
+{% endblock %}

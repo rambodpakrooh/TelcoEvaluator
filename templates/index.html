@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Welcome</h2>
+  <p>
+    This is the TelcoEvaluator control panel.
+  </p>
+
+  <ul>
+    <li>
+      <a href="{{ url_for('dimensions') }}">Configure Dimensions</a>
+      – define trust dimensions (IAM, Compute Isolation, etc.)
+    </li>
+    <li>
+      <a href="{{ url_for('metrics') }}">Configure Metrics & Outcomes</a>
+      – add metrics under each dimension and define their possible values.
+    </li>
+    <li>
+      <a href="{{ url_for('evaluate') }}">Run Evaluation</a>
+      – launch a new trust evaluation across all HCPs.
+    </li>
+  </ul>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Evaluation Runs</h2>
+
+  <form method="post">
+    <button type="submit">Start New Evaluation</button>
+  </form>
+
+  <hr>
+
+  <h3>Past Runs</h3>
+  <ul>
+    {% if runs %}
+      {% for r in runs %}
+        <li>
+          <a href="{{ url_for('evaluation_run_detail', run_id=r.id) }}">
+            Run {{ r.id }}
+          </a>
+          — {{ r.status }} — {{ r.created_at }}
+        </li>
+      {% endfor %}
+    {% else %}
+      <li>No evaluation runs yet.</li>
+    {% endif %}
+  </ul>
+{% endblock %}

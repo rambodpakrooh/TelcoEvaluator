@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+  <head>
+    <title>TelcoEvaluator</title>
+  </head>
+  <body>
+    <h1>TelcoEvaluator</h1>
+    <nav>
+      <a href="{{ url_for('home') }}">Home</a> |
+      <a href="{{ url_for('dimensions') }}">Dimensions</a> |
+      <a href="{{ url_for('metrics') }}">Metrics</a> |
+      <a href="{{ url_for('hcps') }}">HCPs</a> |
+      <a href="{{ url_for('evaluate') }}">Evaluate</a>
+    </nav>
+    <hr>
+    {% block content %}{% endblock %}
+  </body>
+</html>
