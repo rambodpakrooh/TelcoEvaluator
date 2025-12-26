@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Evidence Sources</h2>
+
+<form method="post">
+  <label>Name:</label><br>
+  <input type="text" name="name" required style="width: 300px;"><br><br>
+
+  <label>Base URL:</label><br>
+  <input type="url" name="base_url" required style="width: 300px;"><br>
+  <small>The system will POST to <code>/evidence</code> on this URL.</small><br><br>
+
+  <label>
+    <input type="checkbox" name="accredited"> 
+    <strong>Accredited Source?</strong>
+  </label><br>
+  <small>
+    Accredited sources have a fixed Trust Value of 1.0 and override conflicting evidence.
+  </small><br><br>
+
+  <label>Initial Trust Value (for unaccredited):</label><br>
+  <input type="number" step="0.1" min="0" max="1" name="trust_value" value="0.5"><br><br>
+
+  <button type="submit">Add Source</button>
+</form>
+
+<hr>
+
+<h3>Registered Sources</h3>
+<table border="1" cellpadding="5">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Base URL</th>
+      <th>Accredited</th>
+      <th>Current Trust Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in sources %}
+    <tr>
+      <td>{{ s.id }}</td>
+      <td>{{ s.name }}</td>
+      <td>{{ s.base_url }}</td>
+      <td>{{ "Yes" if s.accredited else "No" }}</td>
+      <td>{{ "%.4f"|format(s.trust_value) }}</td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="5">No evidence sources defined.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

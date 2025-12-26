@@ -266,6 +266,28 @@ def create_app():
                 } for s in srcs
             ]
         })
+
+    @app.route("/evidence-sources", methods=["GET", "POST"])
+    def evidence_sources():
+        if request.method == "POST":
+            name = request.form["name"]
+            base_url = request.form["base_url"]
+            accredited = (request.form.get("accredited") == "on"))
+            trust_value = 1.0 if accredited else 0.5
+            if request.form.get("trust_value"):
+                trust_value = float(request.form["trust_value"])
+
+            source = EvidenceSource(
+                name=name,
+                base_url=base_url,
+                accredited=accredited,
+                trust_value=trust_value
+            )
+            db.session.add(source)
+            db.session.commit()
+            return redirect(url_for("evidence_sources"))
+        sources = EvidenceSource.query.all()
+        return render_template("evidence_sources.html", sources=sources)
      
     return app
 
