@@ -1,7 +1,16 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, abort
 from models import Dimension, Metric, Outcome, HCP, DirichletState, MetricValue, EvaluationRun, Evidence, EvidenceSource
 from extensions import db
-from helpers import initial_alpha_for_metric, evidence_items_trustworthiness, dirichlet_update, ema_update, validate_ordinal_values
+from helpers import (
+    initial_alpha_for_metric, 
+    evidence_items_trustworthiness,
+    dirichlet_update,
+    ema_update,
+    validate_ordinal_values,
+    metric_expected_and_confidence,
+    aggregate_dimension_score,
+    aggregate_total_score
+)
 from tasks import collect_metric_evidence
 
 RHO = 0.1
@@ -137,7 +146,57 @@ def create_app():
     def evaluation_run_detail(run_id):
         run = EvaluationRun.query.get_or_404(run_id)
         states = DirichletState.query.filter_by(evaluation_run_id=run_id).all()
-        return render_template("evaluation_run_detail.html", run=run, states=states)
+        
+        all_dimensions = Dimension.query.all()
+        dimensions_by_id = {d.id: d for d in all_dimensions}
+        
+        all_hcps = HCP.query.all()
+        hcps_by_id = {h.id: h for h in all_hcps}
+        
+        metric_values = []
+
+        for state in states:
+            hcp_obj = hcps_by_id[state.hcp_id]
+            
+            sorted_outcomes = sorted(state.metric.outcomes, key=lambda o: o.ordinal_value)
+            ordinal_values = [o.ordinal_value for o in sorted_outcomes]
+
+            expected, conf = metric_expected_and_confidence(state.alpha, ordinal_values)
+
+            mv = MetricValue(
+                evaluation_run_id=run_id,
+                hcp_id=state.hcp_id,
+                metric_id=state.metric_id,
+                expected_value=expected,
+                confidence=conf
+            )
+            mv.hcp = hcp_obj
+            mv.metric = state.metric
+            metric_values.append(mv)
+
+        raw_dim_scores = aggregate_dimension_score(metric_values)
+        dimension_scores = {}
+        for (h_id, d_id), score in raw_dim_scores.items():
+            h_obj = hcps_by_id[h_id]
+            d_obj = dimensions_by_id[d_id]
+            if h_obj not in dimension_scores:
+                dimension_scores[h_obj] = {}
+            dimension_scores[h_obj][d_obj] = score
+
+        raw_total_scores = aggregate_total_score(raw_dim_scores, dimensions_by_id)
+        total_scores = {}
+        for h_id, score in raw_total_scores.items():
+            h_obj = hcps_by_id[h_id]
+            total_scores[h_obj] = score
+        
+        return render_template(
+            "evaluation_run_detail.html",
+            run=run,
+            states=states,
+            metric_values=metric_values,
+            dimension_scores=dimension_scores,
+            total_scores=total_scores
+        )
 
     @app.post("/api/evidence_batch")
     def api_evidence_batch():
@@ -148,7 +207,7 @@ def create_app():
         items = payload["items"] # list of dictionaries {source_id, observed_outcome_label, raw (optional)}
 
         metric = Metric.query.get_or_404(metric_id)
-        outcomes = (Outcome.query.filter_by(metric_id=metric_id).order_by(Outcome.ordinal_value).all())
+        outcomes = Outcome.query.filter_by(metric_id=metric_id).order_by(Outcome.ordinal_value).all()
         if len(outcomes) != metric.k:
             abort(500, f"Metric {metric.name} has k={metric.k} but {len(outcomes)} outcomes defined")
         label_to_index = {o.label:idx for idx, o in enumerate(outcomes)}
