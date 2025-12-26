@@ -100,7 +100,7 @@ def metric_expected_and_confidence(alpha, ordinal_values):
 
     return expected, conf
 
-def aggregate_dimension_score(metric_values):
+def aggregate_dimension_scores(metric_values):
     """
     metric_values: iterable of MetricValue objects with:
             - hcp_id

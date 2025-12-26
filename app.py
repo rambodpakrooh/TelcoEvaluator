@@ -8,8 +8,8 @@ from helpers import (
     ema_update,
     validate_ordinal_values,
     metric_expected_and_confidence,
-    aggregate_dimension_score,
-    aggregate_total_score
+    aggregate_dimension_scores,
+    aggregate_total_scores
 )
 from tasks import collect_metric_evidence
 
@@ -174,7 +174,7 @@ def create_app():
             mv.metric = state.metric
             metric_values.append(mv)
 
-        raw_dim_scores = aggregate_dimension_score(metric_values)
+        raw_dim_scores = aggregate_dimension_scores(metric_values)
         dimension_scores = {}
         for (h_id, d_id), score in raw_dim_scores.items():
             h_obj = hcps_by_id[h_id]
@@ -183,7 +183,7 @@ def create_app():
                 dimension_scores[h_obj] = {}
             dimension_scores[h_obj][d_obj] = score
 
-        raw_total_scores = aggregate_total_score(raw_dim_scores, dimensions_by_id)
+        raw_total_scores = aggregate_total_scores(raw_dim_scores, dimensions_by_id)
         total_scores = {}
         for h_id, score in raw_total_scores.items():
             h_obj = hcps_by_id[h_id]
@@ -272,7 +272,7 @@ def create_app():
         if request.method == "POST":
             name = request.form["name"]
             base_url = request.form["base_url"]
-            accredited = (request.form.get("accredited") == "on"))
+            accredited = (request.form.get("accredited") == "on")
             trust_value = 1.0 if accredited else 0.5
             if request.form.get("trust_value"):
                 trust_value = float(request.form["trust_value"])
