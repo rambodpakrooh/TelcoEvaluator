@@ -102,7 +102,7 @@ class MetricValue(db.Model):
         return (
             f"<MetricValue run={self.evaluation_run_id} "
             f"hcp_id={self.hcp_id} metric_id={self.metric_id}"
-            f"E={seld.expected_value:.4f} C={self.confidence:.4f}>"
+            f"E={self.expected_value:.4f} C={self.confidence:.4f}>"
         )
     
 class EvaluationRun(db.Model):
