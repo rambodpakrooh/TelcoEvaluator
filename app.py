@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, abort
-from models import Dimension, Metric, Outcome, HCP, DirichletState, MetricValue, EvaluationRun, Evidence, EvidenceSource
+from models import Dimension, Metric, Outcome, HCP, DirichletState, MetricValue, EvaluationRun, Evidence, EvidenceSource, SourceTrust
 from extensions import db
 from helpers import (
     initial_alpha_for_metric, 
@@ -123,6 +123,13 @@ def create_app():
             db.session.add(run)
             db.session.commit()
             
+            sources = EvidenceSource.query.all()
+            for src in sources:
+                db.session.add(
+                    SourceTrust(evaluation_run_id=run.id, source_id=src.id, trust=src.trust_value)
+                )
+            db.session.commit()
+            
             hcps = HCP.query.all()
             metrics = Metric.query.all()
             
@@ -235,7 +242,11 @@ def create_app():
         missing = [sid for sid in source_ids if sid not in sources_by_id]
         if missing:
             abort(400, f"Unknown source_id(s): {missing}")
-        t_es = evidence_items_trustworthiness(items, sources_by_id)
+        
+        source_trusts = SourceTrust.query.filter_by(evaluation_run_id=run_id).filter(SourceTrust.source_id.in_(source_ids)).all()
+        trust_by_source_id = {st.source_id: st for st in source_trusts}
+        
+        t_es = evidence_items_trustworthiness(items, sources_by_id, trust_by_source_id)
 
         state = DirichletState.query.filter_by(evaluation_run_id=run_id, hcp_id=hcp_id, metric_id=metric_id).first_or_404()
         for itm, t_e in zip(items, t_es):
@@ -253,9 +264,11 @@ def create_app():
             db.session.add(ev)
             state.alpha = dirichlet_update(state.alpha, outcome_idx, t_e)
 
-            src = sources_by_id[int(itm["source_id"])]
+            sid = int(itm["source_id"])
+            src = sources_by_id[sid]
+            st = trust_by_source_id[sid]
             if not src.accredited:
-                src.trust_value = ema_update(src.trust_value, t_e, RHO)
+                st.trust = ema_update(st.trust, t_e, RHO)
 
         db.session.commit()
         return jsonify({
@@ -274,7 +287,7 @@ def create_app():
                     "name": s.name,
                     "base_url": s.base_url,
                     "accredited": s.accredited,
-                    "trust_value": s.trust_value
+                    "initial_trust_value": s.trust_value
                 } for s in srcs
             ]
         })

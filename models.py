@@ -123,7 +123,7 @@ class EvidenceSource(db.Model):
     name = db.Column(db.String(128), nullable=False, unique=True)
     base_url = db.Column(db.String(256), nullable=False)
     accredited = db.Column(db.Boolean, default=False, nullable=False)
-    trust_value = db.Column(db.Float, default=0.5, nullable=False)
+    trust_value = db.Column(db.Float, default=0.5, nullable=False) # Initial trust value
     
     __table_args__ = (
         db.CheckConstraint("trust_value >= 0.0 AND trust_value <= 1.0", name="ck_source_trust_0_1"),
@@ -131,6 +131,22 @@ class EvidenceSource(db.Model):
     
     def __repr__(self):
         return f"<EvidenceSource {self.name} acc={self.accredited} t={self.trust_value}>"
+
+class SourceTrust(db.Model):
+    __tablename__ = "source_trust"
+
+    evaluation_run_id = db.Column(db.Integer, db.ForeignKey("evaluation_runs.id"), primary_key=True)
+    source_id = db.Column(db.Integer, db.ForeignKey("evidence_sources.id"), primary_key=True)
+    trust = db.Column(db.Float, nullable=False)
+    evaluation_run = db.relationship("EvaluationRun", backref="source_trusts")
+    source = db.relationship("EvidenceSource", backref="source_trusts")
+
+    __table_args__ = (
+        db.CheckConstraint("trust >= 0.0 AND trust <= 1.0", name="ck_run_source_trust_0_1")
+    )
+
+    def __repr__(self):
+        return f"<SourceTrust run={self.evaluation_run_id} src={self.source_id} t={self.trust}>"
     
 class Evidence(db.Model):
     __tablename__ = "evidence"

@@ -27,7 +27,7 @@ def prod(values):
         p *= v
     return p
 
-def evidence_items_trustworthiness(items, sources_by_id):
+def evidence_items_trustworthiness(items, sources_by_id, trust_by_source_id):
     """
     items: list of dictionaries with keys: source_id, observed_outcome_label, raw (optional), observed_outcome_index
     sources_by_id: dictionary of (id, EvidenceSource) pairs
@@ -56,10 +56,8 @@ def evidence_items_trustworthiness(items, sources_by_id):
     
     for o, support_ids in sources_by_outcome.items():
         conflict_ids = [sid for sid in all_source_ids if sid not in support_ids]
-        support_sources = [sources_by_id[sid] for sid in support_ids]
-        conflict_sources = [sources_by_id[sid] for sid in conflict_ids]
-        support_trust_by_outcome[o] = [s.trust_value for s in support_sources]
-        conflict_trust_by_outcome[o] = [s.trust_value for s in conflict_sources]
+        support_trust_by_outcome[o] = [trust_by_source_id[sid].trust for sid in support_ids]
+        conflict_trust_by_outcome[o] = [trust_by_source_id[sid].trust for sid in conflict_ids]
     
     t_es = []
     for itm in items:
