@@ -161,7 +161,19 @@ def create_app():
             sorted_outcomes = sorted(state.metric.outcomes, key=lambda o: o.ordinal_value)
             ordinal_values = [o.ordinal_value for o in sorted_outcomes]
 
-            expected, conf = metric_expected_and_confidence(state.alpha, ordinal_values)
+            authoritative_ev = Evidence.query.join(EvidenceSource).filter(
+                Evidence.evaluation_run_id == run_id,
+                Evidence.hcp_id == state.hcp_id,
+                Evidence.metric_id == state.metric_id,
+                EvidenceSource.accredited.is_(True)
+            ).first()
+
+            if authoritative_ev is not None:
+                outcome_idx = authoritative_ev.observed_outcome_index
+                expected = ordinal_values[outcome_idx]
+                conf = 1.0
+            else:    
+                expected, conf = metric_expected_and_confidence(state.alpha, ordinal_values)
 
             mv = MetricValue(
                 evaluation_run_id=run_id,
