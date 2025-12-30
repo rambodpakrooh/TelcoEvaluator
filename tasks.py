@@ -3,7 +3,7 @@ import requests
 import os
 
 @celery_app.task
-def collect_metric_evidence(run_id, hcp_id, metric_id):
+def collect_metric_evidence(run_id, hcp_id, hcp_name, metric_id, metric_name):
     CENTRAL = os.environ.get("TELCOEVALUATOR_CENTRAL", "http://127.0.0.1:5000")
     sources = requests.get(f"{CENTRAL}/api/sources", timeout=5).json()["sources"]
 
@@ -15,7 +15,7 @@ def collect_metric_evidence(run_id, hcp_id, metric_id):
         try:
             r = requests.post(
                 f"{base_url}/evidence",
-                json={"evaluation_run_id": run_id, "hcp_id": hcp_id, "metric_id": metric_id},
+                json={"evaluation_run_id": run_id, "hcp_name": hcp_name, "metric_name": metric_name},
                 timeout=5
             )
             r.raise_for_status()

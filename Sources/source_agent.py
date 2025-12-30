@@ -16,10 +16,10 @@ def init_db():
     cur = conn.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS evidence(
-            hcp_id INTEGER NOT NULL,
-            metric_id INTEGER NOT NULL,
+            hcp_name TEXT NOT NULL,
+            metric_name TEXT NOT NULL,
             observed_outcome_label TEXT NOT NULL,
-            PRIMARY KEY (hcp_id, metric_id)
+            PRIMARY KEY (hcp_name, metric_name)
         )
     """)
     cur.execute("""
@@ -27,8 +27,8 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             served_at TEXT NOT NULL,
             evaluation_run_id INTEGER NOT NULL,
-            hcp_id INTEGER NOT NULL,
-            metric_id INTEGER NOT NULL,
+            hcp_name TEXT NOT NULL,
+            metric_name TEXT NOT NULL,
             observed_outcome_label TEXT NOT NULL
         )
     """)
@@ -39,23 +39,23 @@ def init_db():
 def evidence():
     data = request.get_json(force=True)
     run_id = int(data["evaluation_run_id"])
-    hcp_id = int(data["hcp_id"])
-    metric_id = int(data["metric_id"])
+    hcp_name = data["hcp_name"].strip()
+    metric_name = data["metric_name"].strip()
 
     conn = get_db()
     cur = conn.cursor()
 
-    row = cur.execute("SELECT observed_outcome_label FROM evidence WHERE hcp_id=? AND metric_id=?", (hcp_id, metric_id)).fetchone()
+    row = cur.execute("SELECT observed_outcome_label FROM evidence WHERE hcp_name=? AND metric_name=?", (hcp_name, metric_name)).fetchone()
     
     if row is None:
         conn.close()
-        return jsonify({"error": "no evidence available for this (hcp_id, metric_id}"}), 404
+        return jsonify({"error": f"no evidence available for hcp_name \"{hcp_name}\" and metric_name \"{metric_name}\""}), 404
     
     outcome_label = row["observed_outcome_label"]
     served_at = datetime.utcnow().isoformat()
 
-    cur.execute("INSERT INTO served_requests(served_at, evaluation_run_id, hcp_id, metric_id, observed_outcome_label) VALUES (?, ?, ?, ?, ?)", 
-               (served_at, run_id, hcp_id, metric_id, outcome_label))
+    cur.execute("INSERT INTO served_requests(served_at, evaluation_run_id, hcp_name, metric_name, observed_outcome_label) VALUES (?, ?, ?, ?, ?)", 
+               (served_at, run_id, hcp_name, metric_name, outcome_label))
     
     conn.commit()
     conn.close()

@@ -135,7 +135,7 @@ def create_app():
             db.session.commit()
             for hcp in hcps:
                 for metric in metrics:
-                    collect_metric_evidence.delay(run.id, hcp.id, metric.id)
+                    collect_metric_evidence.delay(run.id, hcp.id, hcp.name, metric.id, metric.name)
             run.status="running"
             db.session.commit()
             return redirect(url_for("evaluation_run_detail", run_id=run.id))
