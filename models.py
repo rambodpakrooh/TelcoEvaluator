@@ -104,6 +104,49 @@ class MetricValue(db.Model):
             f"hcp_id={self.hcp_id} metric_id={self.metric_id}"
             f"E={self.expected_value:.4f} C={self.confidence:.4f}>"
         )
+
+class DimensionScore(db.Model):
+    __tablename__ = "dimension_scores"
+
+    id = db.Column(db.Integer, primary_key=True)
+    evaluation_run_id = db.Column(db.Integer, db.ForeignKey("evaluation_runs.id"), nullable=False)
+    hcp_id = db.Column(db.Integer, db.ForeignKey("hcps.id"), nullable=False)
+    dimension_id = db.Column(db.Integer, db.ForeignKey("dimensions.id"), nullable=False)
+    score = db.Column(db.Float, nullable=False)
+    evaluation_run = db.relationship("EvaluationRun", backref="dimension_scores")
+    hcp = db.relationship("HCP", backref="dimension_scores")
+    dimension = db.relationship("Dimension", backref="dimension_scores")
+
+    __table_args__ = (
+        db.UniqueConstraint("evaluation_run_id", "hcp_id", "dimension_id", name="uq_run_hcp_dimension_score")
+    )
+
+    def __repr__(self):
+        return (
+            f"<DimensionScore run={self.evaluation_run_id} "
+            f"hcp_id={self.hcp_id} dimension_id={self.dimension_id} "
+            f"score={self.score:.4f}>"
+        )
+
+class TotalScore(db.Model):
+    __tablename__="total_scores"
+
+    id = db.Column(db.Integer, primary_key=True)
+    evaluation_run_id = db.Column(db.Integer, db.ForeignKey("evaluation_runs.id"), nullable=False)
+    hcp_id = db.Column(db.Integer, db.ForeignKey("hcps.id"), nullable=False)
+    score = db.Column(db.Float, nullable=False)
+    evaluation_run = db.relationship("EvaluationRun", backref="total_scores")
+    hcp = db.relationship("HCP", backref="total_scores")
+
+    __table_args__ = (
+        db.UniqueConstraint("evaluation_run_id", "hcp_id", name="uq_run_hcp_total_score")
+    )
+
+    def __repr__(self):
+        return (
+            f"<TotalScore run={self.evaluation_run_id} "
+            f"hcp_id={self.hcp_id} score={self.score:.4f}>"
+        )
     
 class EvaluationRun(db.Model):
     __tablename__ = "evaluation_runs"
