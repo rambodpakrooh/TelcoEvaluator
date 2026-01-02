@@ -77,5 +77,98 @@
     {% endfor %}
   </table>
 
+  <hr>
+
+  <h3>Trust Evolution Over Time</h3>
+  
+  {% if chart_data %}
+    <div style="width: 100%; max-width: 900px; height: 500px; margin-bottom: 50px;">
+      <canvas id="trustChart"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+    <script>
+      // Receive data from Flask safely
+      const rawData = {{ chart_data | tojson }};
+      
+      // Define a set of colors for the lines
+      const colors = [
+        '#FF6384', // Red
+        '#36A2EB', // Blue
+        '#FFCE56', // Yellow
+        '#4BC0C0', // Teal
+        '#9966FF', // Purple
+        '#FF9F40', // Orange
+        '#C9CBCF', // Grey
+        '#2E8B57', // Sea Green (New)
+        '#8B0000', // Dark Red (New)
+        '#00008B'  // Dark Blue (New)
+      ];
+
+      // Transform data into Chart.js datasets
+      const datasets = Object.keys(rawData).map((sourceName, index) => {
+        return {
+          label: sourceName,
+          data: rawData[sourceName], // Array of {x, y}
+          borderColor: colors[index % colors.length],
+          backgroundColor: colors[index % colors.length],
+          fill: false,
+          stepped: 'before',
+          pointRadius: 4,
+          pointHoverRadius: 6
+        };
+      });
+
+      const ctx = document.getElementById('trustChart').getContext('2d');
+      const trustChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'time', // Time scale
+              time: {
+                tooltipFormat: 'PPpp', // Format for tooltip (Date + Time)
+                displayFormats: {
+                  millisecond: 'HH:mm:ss.SSS',
+                  second: 'HH:mm:ss',
+                  minute: 'HH:mm'
+                }
+              },
+              title: {
+                display: true,
+                text: 'Time of Update (UTC)'
+              }
+            },
+            y: {
+              min: 0,
+              max: 1.05, // Slight padding above 1.0
+              title: {
+                display: true,
+                text: 'Trust Value (0-1)'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+            }
+          }
+        }
+      });
+    </script>
+  {% else %}
+    <p><em>No trust update logs available for this run.</em></p>
+  {% endif %}
 
 {% endblock %}

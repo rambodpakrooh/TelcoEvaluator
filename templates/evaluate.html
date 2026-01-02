@@ -3,6 +3,23 @@
   <h2>Evaluation Runs</h2>
 
   <form method="post">
+    <div style="margin-bottom: 20px; border: 1px solid #ccc; padding: 10px;">
+      <h3>1. Configuration</h3>
+      <label>Trust Update Rate (Rho):</label>
+      <input type="number" step="0.01" min="0" max="1" name="rho" value="0.1">
+    </div>
+
+    <div style="margin-bottom: 20px; border: 1px solid #ccc; padding: 10px;">
+      <h3>2. Select Evidence Sources</h3>
+      {% for s in sources %}
+        <div>
+          <label>
+            <input type="checkbox" name="source_ids" value="{{ s.id }}" checked>
+            {{ s.name }} ({{ s.base_url }})
+          </label>
+        </div>
+      {% endfor %}
+    </div>
     <button type="submit">Start New Evaluation</button>
   </form>
 

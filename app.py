@@ -1,5 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, abort
-from models import Dimension, Metric, Outcome, HCP, DirichletState, MetricValue, EvaluationRun, Evidence, EvidenceSource, SourceTrust
+from flask import Flask, render_template, request, redirect, url_for, jsonify, abort, flash
+from models import (
+Dimension, Metric, Outcome, HCP, DirichletState, MetricValue, 
+EvaluationRun, Evidence, EvidenceSource, SourceTrust,
+DimensionScore, TotalScore, SourceTrustLog
+)
 from extensions import db
 from helpers import (
     initial_alpha_for_metric, 
@@ -13,10 +17,10 @@ from helpers import (
 )
 from tasks import collect_metric_evidence
 
-RHO = 0.1
-
 def create_app():
     app = Flask(__name__)
+
+    app.secret_key = "uW8LVvD1WRJ8xLQnimyYCmy45GxsiIxW"
     
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///telcoevaluator.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -119,11 +123,18 @@ def create_app():
     @app.route("/evaluate", methods=["GET", "POST"])
     def evaluate():
         if request.method == "POST":
-            run = EvaluationRun(status="initializing")
+            rho = float(request.form.get("rho", 0.1))
+
+            selected_source_ids = request.form.getlist("source_ids")
+            if not selected_source_ids:
+                flash("You must select at least one evidence source to run an evaluation.", "error")
+                return redirect(url_for("evaluate"))
+            
+            run = EvaluationRun(status="initializing", rho=rho)
             db.session.add(run)
             db.session.commit()
             
-            sources = EvidenceSource.query.all()
+            sources = EvidenceSource.query.filter(EvidenceSource.id.in_(selected_source_ids)).all()
             for src in sources:
                 db.session.add(
                     SourceTrust(evaluation_run_id=run.id, source_id=src.id, trust=src.trust_value)
@@ -138,75 +149,63 @@ def create_app():
                     alpha = initial_alpha_for_metric(metric)
                     state = DirichletState(evaluation_run_id=run.id, hcp_id=hcp.id, metric_id=metric.id, alpha=alpha)
                     db.session.add(state)
+            
             run.status="ready"
             db.session.commit()
+            
             for hcp in hcps:
                 for metric in metrics:
                     collect_metric_evidence.delay(run.id, hcp.id, hcp.name, metric.id, metric.name)
+            
             run.status="running"
             db.session.commit()
             return redirect(url_for("evaluation_run_detail", run_id=run.id))
+        
         runs = EvaluationRun.query.order_by(EvaluationRun.created_at.desc()).all()
-        return render_template("evaluate.html", runs=runs)
+        all_sources = EvidenceSource.query.all()
+        return render_template("evaluate.html", runs=runs, sources=all_sources)
     
     @app.route("/evaluation-runs/<int:run_id>")
     def evaluation_run_detail(run_id):
         run = EvaluationRun.query.get_or_404(run_id)
         states = DirichletState.query.filter_by(evaluation_run_id=run_id).all()
+
+        metric_values = MetricValue.query.filter_by(evaluation_run_id=run_id).all()
         
-        all_dimensions = Dimension.query.all()
-        dimensions_by_id = {d.id: d for d in all_dimensions}
-        
-        all_hcps = HCP.query.all()
-        hcps_by_id = {h.id: h for h in all_hcps}
-        
-        metric_values = []
-
-        for state in states:
-            hcp_obj = hcps_by_id[state.hcp_id]
-            
-            sorted_outcomes = sorted(state.metric.outcomes, key=lambda o: o.ordinal_value)
-            ordinal_values = [o.ordinal_value for o in sorted_outcomes]
-
-            authoritative_ev = Evidence.query.join(EvidenceSource).filter(
-                Evidence.evaluation_run_id == run_id,
-                Evidence.hcp_id == state.hcp_id,
-                Evidence.metric_id == state.metric_id,
-                EvidenceSource.accredited.is_(True)
-            ).first()
-
-            if authoritative_ev is not None:
-                outcome_idx = authoritative_ev.observed_outcome_index
-                expected = ordinal_values[outcome_idx]
-                conf = 1.0
-            else:    
-                expected, conf = metric_expected_and_confidence(state.alpha, ordinal_values)
-
-            mv = MetricValue(
-                evaluation_run_id=run_id,
-                hcp_id=state.hcp_id,
-                metric_id=state.metric_id,
-                expected_value=expected,
-                confidence=conf
-            )
-            mv.hcp = hcp_obj
-            mv.metric = state.metric
-            metric_values.append(mv)
-
-        raw_dim_scores = aggregate_dimension_scores(metric_values)
+        d_scores = DimensionScore.query.filter_by(evaluation_run_id=run_id).all()
         dimension_scores = {}
-        for (h_id, d_id), score in raw_dim_scores.items():
-            h_obj = hcps_by_id[h_id]
-            d_obj = dimensions_by_id[d_id]
-            if h_obj not in dimension_scores:
-                dimension_scores[h_obj] = {}
-            dimension_scores[h_obj][d_obj] = score
+        hcps = {h.id: h for h in HCP.query.all()}
+        dims = {d.id: d for d in Dimension.query.all()}
 
-        raw_total_scores = aggregate_total_scores(raw_dim_scores, dimensions_by_id)
+        for ds in d_scores:
+            h = hcps[ds.hcp_id]
+            d = dims[ds.dimension_id]
+            if h not in dimension_scores:
+                dimension_scores[h] = {}
+            dimension_scores[h][d] = ds.score
+
+        t_scores = TotalScore.query.filter_by(evaluation_run_id=run_id).all()
         total_scores = {}
-        for h_id, score in raw_total_scores.items():
-            h_obj = hcps_by_id[h_id]
-            total_scores[h_obj] = score
+
+        for ts in t_scores:
+            h = hcps[ts.hcp_id]
+            total_scores[h] = ts.score
+
+        logs = SourceTrustLog.query.filter_by(evaluation_run_id=run_id).order_by(SourceTrustLog.updated_at).all()
+
+        chart_data = {}
+        for log in logs:
+            s_name = log.source.name
+            if s_name not in chart_data:
+                chart_data[s_name] = [{
+                    x: run.created_at.isoformat(),
+                    y: log.old_trust
+                }]
+
+            chart_data[s_name].append({
+                "x": log.updated_at.isoformat(),
+                "y": log.new_trust
+            })
         
         return render_template(
             "evaluation_run_detail.html",
@@ -214,7 +213,8 @@ def create_app():
             states=states,
             metric_values=metric_values,
             dimension_scores=dimension_scores,
-            total_scores=total_scores
+            total_scores=total_scores,
+            chart_data=chart_data
         )
 
     @app.post("/api/evidence_batch")
@@ -225,7 +225,9 @@ def create_app():
         metric_id = int(payload["metric_id"])
         items = payload["items"] # list of dictionaries {source_id, observed_outcome_label, raw (optional)}
 
+        run = EvaluationRun.query.get_or_404(run_id)
         metric = Metric.query.get_or_404(metric_id)
+        
         outcomes = Outcome.query.filter_by(metric_id=metric_id).order_by(Outcome.ordinal_value).all()
         if len(outcomes) != metric.k:
             abort(500, f"Metric {metric.name} has k={metric.k} but {len(outcomes)} outcomes defined")
@@ -237,18 +239,17 @@ def create_app():
             itm["observed_outcome_index"] = label_to_index[label]
 
         source_ids = [int(itm["source_id"]) for itm in items]
-        sources = EvidenceSource.query.filter(EvidenceSource.id.in_(source_ids)).all()
-        sources_by_id = {s.id: s for s in sources}
+        source_trusts = SourceTrust.query.filter_by(evaluation_run_id=run_id).filter(SourceTrust.source_id.in_(source_ids)).all()
+        trust_by_source_id = {st.source_id: st for st in source_trusts}
+        sources_by_id = {st.source_id: st.source for st in source_trusts}
         missing = [sid for sid in source_ids if sid not in sources_by_id]
         if missing:
             abort(400, f"Unknown source_id(s): {missing}")
         
-        source_trusts = SourceTrust.query.filter_by(evaluation_run_id=run_id).filter(SourceTrust.source_id.in_(source_ids)).all()
-        trust_by_source_id = {st.source_id: st for st in source_trusts}
-        
         t_es = evidence_items_trustworthiness(items, sources_by_id, trust_by_source_id)
 
         state = DirichletState.query.filter_by(evaluation_run_id=run_id, hcp_id=hcp_id, metric_id=metric_id).first_or_404()
+        
         for itm, t_e in zip(items, t_es):
             outcome_idx = int(itm["observed_outcome_index"])
             raw = itm.get("raw")
@@ -268,13 +269,96 @@ def create_app():
             src = sources_by_id[sid]
             st = trust_by_source_id[sid]
             if not src.accredited:
-                st.trust = ema_update(st.trust, t_e, RHO)
+                old_val = st.trust
+                new_val = ema_update(st.trust, t_e, run.rho)
+
+                log_entry = SourceTrustLog(
+                    evaluation_run_id=run_id, source_id=sid,
+                    old_trust=old_val, new_trust=new_val
+                )
+                db.session.add(log_entry)
+                st.trust = new_val
 
         db.session.commit()
+
+        sorted_outcomes = sorted(metric.outcomes, key=lambda o: o.ordinal_value)
+        ordinal_values = [o.ordinal_value for o in sorted_outcomes]
+
+        authoritative_ev = Evidence.query.join(EvidenceSource).filter(
+            Evidence.evaluation_run_id == run_id, Evidence.hcp_id == hcp_id,
+            Evidence.metric_id == metric_id, EvidenceSource.accredited.is_(True)
+        ).first()
+
+        if authoritative_ev:
+            outcome_idx = authoritative_ev.observed_outcome_index
+            expected = ordinal_values[outcome_idx]
+            conf = 1.0
+        else:
+            expected, conf = metric_expected_and_confidence(state.alpha, ordinal_values)
+
+        mv = MetricValue(
+            evaluation_run_id=run_id, hcp_id=hcp_id, metric_id=metric_id,
+            expected_value=expected, confidence=conf
+        )
+        db.session.add(mv)
+        db.session.commit()
+
+        dim_metrics_count = Metric.query.filter_by(dimension_id=metric.dimension_id).count()
+
+        processed_metrics_count = MetricValue.query.join(Metric).filter(
+            MetricValue.evaluation_run_id == run_id,
+            MetricValue.hcp_id == hcp_id,
+            Metric.dimension_id == metric.dimension_id
+        ).count()
+
+        if processed_metrics_count == dim_metrics_count:
+            mvs = MetricValue.query.join(Metric).filter(
+                MetricValue.evaluation_run_id == run_id,
+                MetricValue.hcp_id == hcp_id,
+                Metric.dimension_id == metric.dimension_id
+            ).all()
+
+            dim_scores_map = aggregate_dimension_scores(mvs)
+            score_val = dim_scores_map[(hcp_id, metric.dimension_id)]
+
+            ds = DimensionScore(
+                evaluation_run_id=run_id, hcp_id=hcp_id,
+                dimension_id=metric.dimension_id, score=score_val
+            )
+            db.session.add(ds)
+            db.session.commit()
+
+            total_dims_count = Dimension.query.count()
+            processed_dims_count = DimensionScore.query.filter_by(
+                evaluation_run_id=run_id, hcp_id=hcp_id
+            ).count()
+
+            if processed_dims_count == total_dims_count:
+                d_scores = DimensionScore.query.filter_by(
+                    evaluation_run_id=run_id, hcp_id=hcp_id
+                ).all()
+
+                ds_map = {(d.hcp_id, d.dimension_id): d.score for d in d_scores}
+
+                all_dims = Dimension.query.all()
+                dims_by_id = {d.id: d for d in all_dims}
+
+                total_map = aggregate_total_scores(ds_map, dims_by_id)
+                t_score_val = total_map[hcp_id]
+
+                ts = TotalScore(evaluation_run_id=run_id, hcp_id=hcp_id, score=t_score_val)
+                db.session.add(ts)
+                db.session.commit()
+
+                total_hcps = HCP.query.count()
+                processed_hcps = TotalScore.query.filter_by(evaluation_run_id=run_id).count()
+
+                if processed_hcps == total_hcps:
+                    run.status = "completed"
+                    db.session.commit()
+        
         return jsonify({
-            "ok": True,
-            "new_alpha": state.alpha,
-            "t_es": t_es
+            "ok": True
         })
 
     @app.get("/api/sources")
@@ -289,6 +373,22 @@ def create_app():
                     "accredited": s.accredited,
                     "initial_trust_value": s.trust_value
                 } for s in srcs
+            ]
+        })
+
+    @app.get("/api/runs/<int:run_id>/sources")
+    def api_run_sources(run_id):
+        trusts = SourceTrust.query.filter_by(evaluation_run_id=run_id).all()
+        sources = [t.source for t in trusts]
+        return jsonify({
+            "sources": [
+                {
+                    "id": s.id,
+                    "name": s.name,
+                    "base_url": s.base_url,
+                    "accredited": s.accredited,
+                    "initial_trust_value": s.trust_value
+                } for s in sources
             ]
         })
 

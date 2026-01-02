@@ -154,10 +154,27 @@ class EvaluationRun(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.String(32), default="pending")
+    rho = db.Column(db.Float, nullable=False, default=0.1)
     dirichlet_states = db.relationship("DirichletState", back_populates="evaluation_run", cascade="all, delete-orphan")
+    trust_logs = db.relationship("SourceTrustLog", back_populates="evaluation_run", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<EvaluationRun {self.id} ({self.status})>"
+
+class SourceTrustLog(db.Model):
+    __tablename__ = "source_trust_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    evaluation_run_id = db.Column(db.Integer, db.ForeignKey("evaluation_runs.id"), nullable=False)
+    source_id = db.Column(db.Integer, db.ForeignKey("evidence_sources.id"), nullable=False)
+    old_trust = db.Column(db.Float, nullable=False)
+    new_trust = db.Column(db.Float, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    evaluation_run = db.relationship("EvaluationRun", back_populates="trust_logs")
+    source = db.relationship("EvidenceSource")
+
+    def __repr__(self):
+        return f"<SourceTrustLog {self.id}>"
     
 class EvidenceSource(db.Model):
     __tablename__ = "evidence_sources"

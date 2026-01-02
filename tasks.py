@@ -5,7 +5,7 @@ import os
 @celery_app.task
 def collect_metric_evidence(run_id, hcp_id, hcp_name, metric_id, metric_name):
     CENTRAL = os.environ.get("TELCOEVALUATOR_CENTRAL", "http://127.0.0.1:5000")
-    sources = requests.get(f"{CENTRAL}/api/sources", timeout=5).json()["sources"]
+    sources = requests.get(f"{CENTRAL}/api/runs/{run_id}/sources", timeout=5).json()["sources"]
 
     items=[]
     for s in sources:
@@ -28,8 +28,6 @@ def collect_metric_evidence(run_id, hcp_id, hcp_name, metric_id, metric_name):
         except Exception:
             continue
 
-    if not items:
-        return
     requests.post(
         f"{CENTRAL}/api/evidence_batch",
         json={
