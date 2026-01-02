@@ -198,8 +198,8 @@ def create_app():
             s_name = log.source.name
             if s_name not in chart_data:
                 chart_data[s_name] = [{
-                    x: run.created_at.isoformat(),
-                    y: log.old_trust
+                    "x": run.created_at.isoformat(),
+                    "y": log.old_trust
                 }]
 
             chart_data[s_name].append({

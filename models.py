@@ -91,7 +91,7 @@ class MetricValue(db.Model):
     expected_value = db.Column(db.Float, nullable=False)
     confidence = db.Column(db.Float, nullable=False)
     hcp = db.relationship("HCP", backref="metric_values")
-    metric = db.relationship("Metric", backref="matric_values")
+    metric = db.relationship("Metric", backref="metric_values")
     evaluation_run = db.relationship("EvaluationRun", backref="metric_values")
     
     __table_args__ = (
