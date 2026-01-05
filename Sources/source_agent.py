@@ -14,14 +14,7 @@ def get_db():
 def init_db():
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS evidence(
-            hcp_name TEXT NOT NULL,
-            metric_name TEXT NOT NULL,
-            observed_outcome_label TEXT NOT NULL,
-            PRIMARY KEY (hcp_name, metric_name)
-        )
-    """)
+    
     cur.execute("""
         CREATE TABLE IF NOT EXISTS served_requests(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
