@@ -118,7 +118,7 @@ class DimensionScore(db.Model):
     dimension = db.relationship("Dimension", backref="dimension_scores")
 
     __table_args__ = (
-        db.UniqueConstraint("evaluation_run_id", "hcp_id", "dimension_id", name="uq_run_hcp_dimension_score")
+        db.UniqueConstraint("evaluation_run_id", "hcp_id", "dimension_id", name="uq_run_hcp_dimension_score"),
     )
 
     def __repr__(self):
@@ -139,7 +139,7 @@ class TotalScore(db.Model):
     hcp = db.relationship("HCP", backref="total_scores")
 
     __table_args__ = (
-        db.UniqueConstraint("evaluation_run_id", "hcp_id", name="uq_run_hcp_total_score")
+        db.UniqueConstraint("evaluation_run_id", "hcp_id", name="uq_run_hcp_total_score"),
     )
 
     def __repr__(self):
@@ -202,7 +202,7 @@ class SourceTrust(db.Model):
     source = db.relationship("EvidenceSource", backref="source_trusts")
 
     __table_args__ = (
-        db.CheckConstraint("trust >= 0.0 AND trust <= 1.0", name="ck_run_source_trust_0_1")
+        db.CheckConstraint("trust >= 0.0 AND trust <= 1.0", name="ck_run_source_trust_0_1"),
     )
 
     def __repr__(self):
