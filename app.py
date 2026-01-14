@@ -16,6 +16,7 @@ from helpers import (
     aggregate_total_scores
 )
 from tasks import collect_metric_evidence
+from datetime import datetime
 
 def create_app():
     app = Flask(__name__)
@@ -250,6 +251,7 @@ def create_app():
 
         state = DirichletState.query.filter_by(evaluation_run_id=run_id, hcp_id=hcp_id, metric_id=metric_id).first_or_404()
         
+        batchtime = datetime.utcnow()
         for itm, t_e in zip(items, t_es):
             outcome_idx = int(itm["observed_outcome_index"])
             raw = itm.get("raw")
@@ -274,7 +276,7 @@ def create_app():
 
                 log_entry = SourceTrustLog(
                     evaluation_run_id=run_id, source_id=sid,
-                    old_trust=old_val, new_trust=new_val
+                    old_trust=old_val, new_trust=new_val, updated_at=batchtime
                 )
                 db.session.add(log_entry)
                 st.trust = new_val
