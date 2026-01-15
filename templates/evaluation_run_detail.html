@@ -131,6 +131,10 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: {
+            mode: 'x',
+            intersect: false,
+          },
           scales: {
             x: {
               type: 'time', // Time scale
@@ -161,8 +165,6 @@
               position: 'top',
             },
             tooltip: {
-              mode: 'index',
-              intersect: false,
             }
           }
         }
