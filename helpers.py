@@ -90,11 +90,14 @@ def metric_expected_and_confidence(alpha, ordinal_values):
     second_moment = sum(m * (o ** 2) for m, o in zip(means, ordinal_values))
     var = (second_moment - expected ** 2) / (a0 + 1.0)
 
-    sum_o2 = sum(o ** 2 for o in ordinal_values)
-    sum_o = sum(o for o in ordinal_values)
-    max_var = (k * sum_o2 - (sum_o ** 2)) / (k ** 2 * (k + 1.0))
+    max_var = expected * (1.0 - expected) #According to Bhatia-Davis inquality
 
-    conf = 1.0 - math.sqrt(var / max_var)
+    if max_var <= 1e-9:
+        conf = 1.0
+    else:
+        ratio = var / max_var
+        ratio = max(0.0, min(ratio, 1.0))
+        conf = 1.0 - math.sqrt(ratio)
 
     return expected, conf
 
