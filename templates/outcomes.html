@@ -1,44 +1,62 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Outcomes for {{ metric.name }}</h2>
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Outcomes for "{{ metric.name }}"</span>
+        <a href="{{ url_for('metrics') }}" class="btn btn-sm btn-outline-secondary">Back</a>
+      </div>
+      <div class="card-body">
+        
+        {% if metric.outcomes | length == 0 %}
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Please define exactly <strong>{{ metric.k }}</strong> outcomes.
+          </div>
+          
+          <form method="post">
+            <div class="table-responsive">
+              <table class="table table-bordered">
+                <thead class="table-light">
+                  <tr>
+                    <th>Outcome Label</th>
+                    <th style="width: 150px;">Ordinal (0-1)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for i in range(metric.k) %}
+                  <tr>
+                    <td>
+                      <input type="text" name="label_{{ i }}" class="form-control" placeholder="e.g. Low, High, etc." required>
+                    </td>
+                    <td>
+                      <input type="number" step="0.01" min="0" max="1" name="ordinal_value_{{ i }}" class="form-control" required>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="form-text mb-3">Ordinal values must be unique and between 0.0 and 1.0.</div>
+            <button type="submit" class="btn btn-success w-100">Save Outcomes</button>
+          </form>
 
-{% if metric.outcomes | length == 0 %}
-  <h3>Add {{ metric.k }} outcome(s)</h3>
-  <form method="post">
-    <table>
-      <tr>
-        <th>Label</th>
-        <th>Ordinal Value (0–1)</th>
-      </tr>
+        {% else %}
+          <div class="alert alert-success">
+            <i class="bi bi-check-circle"></i> Outcomes are already defined.
+          </div>
+          <ul class="list-group">
+            {% for o in metric.outcomes | sort(attribute='ordinal_value') %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ o.label }}
+                <span class="badge bg-primary rounded-pill">{{ o.ordinal_value }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
 
-      {% for i in range(metric.k) %}
-      <tr>
-        <td>
-          <input type="text" name="label_{{ i }}" required>
-        </td>
-        <td>
-          <input type="number" step="0.01" min="0" max="1" name="ordinal_value_{{ i }}" required>
-        </td>
-      </tr>
-      {% endfor %}
-    </table>
-
-    <small>
-      Labels and ordinal values must be unique. Ordinal values define outcome ordering.
-    </small>
-    <br><br>
-
-    <button type="submit">Save Outcomes</button>
-  </form>
-{% else %}
-  <p><strong>Outcomes for this metric are already defined and cannot be modified.</strong></p>
-{% endif %}
-
-<h3>Existing Outcomes</h3>
-<ul>
-  {% for o in metric.outcomes | sort(attribute='ordinal_value') %}
-    <li>{{ o.label }} → {{ o.ordinal_value }}</li>
-  {% endfor %}
-</ul>
-
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
