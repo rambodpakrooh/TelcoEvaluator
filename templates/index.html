@@ -1,22 +1,74 @@
 {% extends "base.html" %}
 {% block content %}
-  <h2>Welcome</h2>
-  <p>
-    This is the TelcoEvaluator control panel.
-  </p>
+<div class="text-center mb-5">
+  <h1 class="display-4 fw-bold">TelcoEvaluator Dashboard</h1>
+  <p class="lead text-muted">Control panel for Trust Evaluation of Hyperscale Cloud Providers</p>
+</div>
 
-  <ul>
-    <li>
-      <a href="{{ url_for('dimensions') }}">Configure Dimensions</a>
-      – define trust dimensions (IAM, Compute Isolation, etc.)
-    </li>
-    <li>
-      <a href="{{ url_for('metrics') }}">Configure Metrics & Outcomes</a>
-      – add metrics under each dimension and define their possible values.
-    </li>
-    <li>
-      <a href="{{ url_for('evaluate') }}">Run Evaluation</a>
-      – launch a new trust evaluation across all HCPs.
-    </li>
-  </ul>
+<div class="row g-4 justify-content-center">
+  
+  <div class="col-md-4">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header bg-white fw-bold text-center py-3">
+        <i class="bi bi-diagram-3 text-primary me-2"></i> Dimensions & Metrics
+      </div>
+      <div class="card-body d-flex flex-column">
+        <p class="card-text text-muted small mb-4">
+          Configure the dimensions, associated metrics, and expected outcomes.
+        </p>
+        
+        <div class="mt-auto d-grid gap-2">
+          <a href="{{ url_for('dimensions') }}" class="btn btn-outline-primary">
+            <i class="bi bi-layers"></i> Dimensions
+          </a>
+          <a href="{{ url_for('metrics') }}" class="btn btn-outline-primary">
+            <i class="bi bi-ruler"></i> Metrics & Outcomes
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header bg-white fw-bold text-center py-3">
+        <i class="bi bi-database text-success me-2"></i> Evaluation Data
+      </div>
+      <div class="card-body d-flex flex-column">
+        <p class="card-text text-muted small mb-4">
+          Manage the entities involved in the evaluation: the Cloud Providers (targets) and Evidence Sources (inputs).
+        </p>
+        
+        <div class="mt-auto d-grid gap-2">
+          <a href="{{ url_for('hcps') }}" class="btn btn-outline-success">
+            <i class="bi bi-hdd-rack"></i> HCPs
+          </a>
+          <a href="{{ url_for('evidence_sources') }}" class="btn btn-outline-success">
+            <i class="bi bi-globe"></i> Evidence Sources
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card h-100 shadow-sm border-0 bg-light">
+      <div class="card-header bg-transparent fw-bold text-center py-3 border-bottom-0">
+        <i class="bi bi-cpu text-danger me-2"></i> Execution
+      </div>
+      <div class="card-body d-flex flex-column">
+        <p class="card-text mb-4">
+          Launch the trust calculation engine to aggregate evidence and update trust scores.
+        </p>
+        
+        <div class="mt-auto">
+          <a href="{{ url_for('evaluate') }}" class="btn btn-danger btn-lg w-100 shadow-sm">
+            <i class="bi bi-play-circle-fill"></i> Run Evaluation
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
 {% endblock %}

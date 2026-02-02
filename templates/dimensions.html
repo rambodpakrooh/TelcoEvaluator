@@ -1,31 +1,56 @@
 {% extends "base.html" %}
 {% block content %}
-  <h2>Dimensions</h2>
+<div class="row">
+  <div class="col-md-4">
+    <div class="card mb-4">
+      <div class="card-header bg-white fw-bold">Create Dimension</div>
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" name="name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Weight (1-5)</label>
+            <input type="number" name="weight" class="form-control" min="1" max="5" step="1" value="1">
+            <div class="form-text">Influence in final score.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="3"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Create</button>
+        </form>
+      </div>
+    </div>
+  </div>
 
-  <form method="post">
-    <label>Name:</label>
-    <input type="text" name="name" required>
-    <br>
-
-    <label>Weight (1-5):</label>
-    <input type="number" name="weight" min="1" max="5" step="1" value="1">
-    <br>
-    <small>
-      Higher weight increases this dimension’s influence in the final trust score.
-    </small>
-    <br>
-
-    <label>Description:</label><br>
-    <textarea name="description" rows="3" cols="40"></textarea>
-    <br>
-
-    <button type="submit">Create Dimension</button>
-  </form>
-
-  <h3>Existing Dimensions</h3>
-  <ul>
-    {% for d in dimensions %}
-      <li>{{ d.name }} (weight={{ d.weight }})</li>
-    {% endfor %}
-  </ul>
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header bg-white fw-bold">Existing Dimensions</div>
+      <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th>
+              <th>Weight</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in dimensions %}
+              <tr>
+                <td class="fw-bold">{{ d.name }}</td>
+                <td><span class="badge bg-secondary">{{ d.weight }}</span></td>
+                <td class="text-muted small">{{ d.description or '-' }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="3" class="text-center text-muted p-4">No dimensions defined.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

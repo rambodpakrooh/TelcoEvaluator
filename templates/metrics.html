@@ -1,26 +1,53 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Metrics</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2>Metrics Configuration</h2>
+</div>
 
 {% for dim in dimensions %}
-  <h3>{{ dim.name }} (weight={{ dim.weight }})</h3>
-
-  <ul>
-    {% if dim.metrics %}
-      {% for m in dim.metrics %}
-        <li>
-          {{ m.name }} (w={{ m.weight }}, k={{ m.k }})
-          — <a href="{{ url_for('edit_metric', metric_id=m.id) }}">Edit</a>
-          — <a href="{{ url_for('add_outcomes', metric_id=m.id) }}">Outcomes</a>
-          <small>(labels & ordinal values)</small>
-        </li>
-      {% endfor %}
-    {% else %}
-      <li><em>No metrics defined yet.</em></li>
-    {% endif %}
-  </ul>
-
-  <a href="{{ url_for('create_metric', dimension_id=dim.id) }}">Add metric</a>
-  <hr>
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center bg-light">
+      <h5 class="mb-0">{{ dim.name }} <span class="badge bg-secondary ms-2">W={{ dim.weight }}</span></h5>
+      <a href="{{ url_for('create_metric', dimension_id=dim.id) }}" class="btn btn-sm btn-primary">
+        <i class="bi bi-plus-lg"></i> Add Metric
+      </a>
+    </div>
+    <div class="card-body p-0">
+      {% if dim.metrics %}
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th style="width: 30%;">Name</th>
+              <th>Weight</th>
+              <th>Outcomes (k)</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in dim.metrics %}
+            <tr>
+              <td>
+                <span class="fw-bold">{{ m.name }}</span>
+                {% if m.description %}<br><small class="text-muted">{{ m.description }}</small>{% endif %}
+              </td>
+              <td>{{ m.weight }}</td>
+              <td>{{ m.k }}</td>
+              <td>
+                <a href="{{ url_for('edit_metric', metric_id=m.id) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
+                <a href="{{ url_for('add_outcomes', metric_id=m.id) }}" class="btn btn-sm btn-outline-info">
+                  Outcomes
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="p-3 text-muted">No metrics defined for this dimension.</div>
+      {% endif %}
+    </div>
+  </div>
+{% else %}
+  <div class="alert alert-warning">No dimensions found. Please create dimensions first.</div>
 {% endfor %}
 {% endblock %}

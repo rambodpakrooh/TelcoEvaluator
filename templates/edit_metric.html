@@ -1,23 +1,36 @@
 {% extends "base.html" %}
 {% block content %}
-  <h2>Edit Metric: {{ metric.name }}</h2>
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card">
+      <div class="card-header bg-white fw-bold">Edit Metric: {{ metric.name }}</div>
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" name="name" value="{{ metric.name }}" class="form-control" required>
+          </div>
 
-  <form method="post">
-    <label>Name:</label>
-    <input type="text" name="name" value="{{ metric.name }}" required><br>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="3">{{ metric.description or '' }}</textarea>
+          </div>
 
-    <label>Description:</label><br>
-    <textarea name="description" rows="3">{{ metric.description or '' }}</textarea><br>
+          <div class="alert alert-secondary">
+            <div class="row">
+              <div class="col-6"><strong>Weight:</strong> {{ metric.weight }}</div>
+              <div class="col-6"><strong>Outcomes (k):</strong> {{ metric.k }}</div>
+            </div>
+            <small class="d-block mt-2">These values cannot be changed after creation.</small>
+          </div>
 
-    <p>
-      <strong>Weight (1-5):</strong> {{ metric.weight }}<br>
-      <strong>Number of outcomes (k):</strong> {{ metric.k }}<br>
-      <small>
-        Weight and number of outcomes cannot be changed after metric creation.
-      </small>
-    </p>
-
-    <button type="submit">Save</button>
-  </form>
-
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{{ url_for('metrics') }}" class="btn btn-light">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

@@ -1,26 +1,40 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Create Metric for {{ dimension.name }}</h2>
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card">
+      <div class="card-header bg-white fw-bold">Create Metric for {{ dimension.name }}</div>
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" name="name" class="form-control" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="3"></textarea>
+          </div>
 
-<form method="post">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Weight (1-5)</label>
+              <input type="number" name="weight" class="form-control" min="1" max="5" step="1" value="1">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Outcomes (k)</label>
+              <input type="number" name="k" class="form-control" min="2" value="2">
+              <div class="form-text small">Cannot change later.</div>
+            </div>
+          </div>
 
-  <label>Name:</label>
-  <input type="text" name="name" required><br>
-
-  <label>Description:</label><br>
-  <textarea name="description" rows="3" cols="40"></textarea><br>
-
-  <label>Weight (1-5):</label>
-  <input type="number" name="weight" min="1" max="5" step="1" value="1"><br>
-
-  <label>Number of outcomes (k):</label>
-  <input type="number" name="k" min="2" value="2"><br><br>
-  <small>
-    You must define exactly <b>k</b> outcomes (with labels and ordinal values) after creating the metric.
-  </small>
-  <br><br>
-
-  <button type="submit">Create Metric</button>
-
-</form>
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-success">Create Metric</button>
+            <a href="{{ url_for('metrics') }}" class="btn btn-light">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

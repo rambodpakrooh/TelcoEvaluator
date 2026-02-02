@@ -1,244 +1,188 @@
 {% extends "base.html" %}
 {% block content %}
-  <h2>Evaluation Run {{ run.id }}</h2>
-  <p>Status: {{ run.status }}</p>
-  <p>Created at: {{ run.created_at }}</p>
-  <p>Trust Update Rate (&rho;): {{ run.rho }}</p>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2>Evaluation Run #{{ run.id }}</h2>
+  <span class="badge {{ 'bg-success' if run.status=='completed' else 'bg-warning text-dark' }} fs-6">
+    {{ run.status }}
+  </span>
+</div>
 
-  <h3>Dirichlet States</h3>
-  <p>Total states: {{ states|length }}</p>
-
-  <table border="1" cellpadding="5">
-      <tr>
-          <th>HCP</th>
-          <th>Metric</th>
-          <th>Alpha (Dirichlet)</th>
-      </tr>
-      {% for s in states %}
-      <tr>
-          <td>{{ s.hcp.name if s.hcp else s.hcp_id }}</td>
-          <td>{{ s.metric.name if s.metric else s.metric_id }}</td>
-          <td>{{ s.alpha }}</td>
-      </tr>
-      {% endfor %}
-  </table>
-
-  <h3>Metric Results</h3>
-
-  <table border="1" cellpadding="5">
-    <tr>
-      <th>HCP</th>
-      <th>Metric</th>
-      <th>Expected Value</th>
-      <th>Confidence</th>
-      <th>Expected &times Confidence</th>
-    </tr>
-    {% for mv in metric_values %}
-    <tr>
-      <td>{{ mv.hcp.name }}</td>
-      <td>{{ mv.metric.name }}</td>
-      <td>{{ "%.4f"|format(mv.expected_value) }}</td>
-      <td>{{ "%.4f"|format(mv.confidence) }}</td>
-      <td>{{ "%.4f"|format(mv.expected_value * mv.confidence) }}</td>
-    </tr>
-    {% endfor %}
-  </table>
-
-  <h3>Dimension Scores</h3>
-
-  <table border="1" cellpadding="5">
-    <tr>
-      <th>HCP</th>
-      <th>Dimension</th>
-      <th>Score</th>
-    </tr>
-    {% for hcp, dims in dimension_scores.items() %}
-      {% for dim, score in dims.items() %}
-      <tr>
-        <td>{{ hcp.name }}</td>
-        <td>{{ dim.name }}</td>
-        <td>{{ "%.4f"|format(score) }}</td>
-      </tr>
-      {% endfor %}
-    {% endfor %}
-  </table>
-
-  <h3>Total Trust Score</h3>
-
-  <table border="1" cellpadding="5">
-    <tr>
-      <th>HCP</th>
-      <th>Total Trust Score</th>
-    </tr>
-    {% for hcp, score in total_scores.items() %}
-    <tr>
-      <td>{{ hcp.name }}</td>
-      <td><strong>{{ "%.4f"|format(score) }}</strong></td>
-    </tr>
-    {% endfor %}
-  </table>
-
-  <hr>
-
-  <h3>Trust Evolution Over Time</h3>
-  
-  {% if chart_data %}
-    <div style="width: 100%; max-width: 1000px; height: 600px; margin-bottom: 50px;">
-      <canvas id="trustChart"></canvas>
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card p-3 bg-light">
+      <p class="mb-1"><strong>Date:</strong> {{ run.created_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC</p>
+      <p class="mb-0"><strong>Trust Update Rate (&rho;):</strong> {{ run.rho }}</p>
     </div>
+  </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<ul class="nav nav-tabs mb-4" id="runTabs" role="tablist">
+  <li class="nav-item">
+    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#scores">Final Scores</button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#metrics">Metric Details</button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#chart">Trust Evolution</button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#debug">Debug (Dirichlet)</button>
+  </li>
+</ul>
 
-    <script>
-      // Receive data from Flask safely
-      const rawData = {{ chart_data | tojson }};
+<div class="tab-content">
+  
+  <div class="tab-pane fade show active" id="scores">
+    <div class="row">
+      <div class="col-md-6">
+        <h4 class="mb-3">Total Trust Score</h4>
+        <table class="table table-bordered table-striped">
+          <thead class="table-dark">
+            <tr>
+              <th>HCP</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for hcp, score in total_scores.items() %}
+            <tr>
+              <td>{{ hcp.name }}</td>
+              <td class="fs-5 fw-bold">{{ "%.4f"|format(score) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
       
-      // Define a set of colors for the lines
-      const colors = [
-        '#000000', // Black
-        '#e6194b', // Red
-        '#3cb44b', // Green
-        '#000080', // Navy Blue
-        '#f58231', // Orange
-        '#911eb4', // Purple
-        '#46f0f0', // Cyan (Darker)
-        '#f032e6', // Magenta
-        '#800000', // Maroon
-        '#008080', // Teal
-        '#808000', // Olive
-        '#aa6e28', // Brown
-        '#aaffc3', // Mint (Bordered) - handled by dark border usually, but let's stick to darker
-        '#0000FF', // Blue
-        '#FFD700', // Gold (Darker shade)
-        '#808080'  // Grey
-      ];
+      <div class="col-md-6">
+        <h4 class="mb-3">Dimension Scores</h4>
+        <table class="table table-sm table-hover border">
+          <thead class="table-light">
+            <tr>
+              <th>HCP</th>
+              <th>Dimension</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for hcp, dims in dimension_scores.items() %}
+              {% for dim, score in dims.items() %}
+              <tr>
+                <td>{{ hcp.name }}</td>
+                <td>{{ dim.name }}</td>
+                <td>{{ "%.4f"|format(score) }}</td>
+              </tr>
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-      // Distinct Point Styles (Shapes + Rotations)
-      const styles = [
-        { shape: 'circle', rot: 0 },
-        { shape: 'triangle', rot: 0 },         // Pointing Up
-        { shape: 'rect', rot: 0 },             // Square
-        { shape: 'rectRot', rot: 0 },          // Diamond
-        { shape: 'cross', rot: 0 },            // Plus sign
-        { shape: 'crossRot', rot: 0 },         // X sign
-        { shape: 'star', rot: 0 },
-        { shape: 'rectRounded', rot: 0 },
-        { shape: 'dash', rot: 0 },             // Horizontal dash
-        { shape: 'line', rot: 0 },             // Horizontal line (thinner)
-        { shape: 'triangle', rot: 180 },       // Pointing Down
-        { shape: 'triangle', rot: 90 },        // Pointing Right
-        { shape: 'line', rot: 90 },            // Vertical line
-        { shape: 'dash', rot: 90 },            // Vertical dash
-        { shape: 'star', rot: 180 }            // Inverted Star
-      ];
+  <div class="tab-pane fade" id="metrics">
+    <div class="table-responsive">
+      <table class="table table-hover border">
+        <thead class="table-light">
+          <tr>
+            <th>HCP</th>
+            <th>Metric</th>
+            <th>Exp. Value</th>
+            <th>Confidence</th>
+            <th>Result (E &times; C)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for mv in metric_values %}
+          <tr>
+            <td>{{ mv.hcp.name }}</td>
+            <td>{{ mv.metric.name }}</td>
+            <td>{{ "%.4f"|format(mv.expected_value) }}</td>
+            <td>{{ "%.4f"|format(mv.confidence) }}</td>
+            <td class="fw-bold">{{ "%.4f"|format(mv.expected_value * mv.confidence) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-      // Transform data into Chart.js datasets
-      const datasets = Object.keys(rawData).map((sourceName, index) => {
-        // Cycle safely through colors and style objects
-        const color = colors[index % colors.length];
-        const styleObj = styles[index % styles.length];
-        
-        return {
-          label: sourceName,
-          data: rawData[sourceName], // Array of {x, y}
-          borderColor: color,
-          backgroundColor: 'transparent',
-          pointStyle: styleObj.shape,
-          pointRotation: styleObj.rot,
-          fill: false,
-          stepped: 'before',
-          borderWidth: 2,
-          pointRadius: 10,
-          pointHoverRadius: 12
-        };
-      });
+  <div class="tab-pane fade" id="chart">
+    {% if chart_data %}
+      <div class="card p-2" style="height: 600px;">
+        <canvas id="trustChart"></canvas>
+      </div>
+    {% else %}
+      <div class="alert alert-info">No trust update logs available for this run.</div>
+    {% endif %}
+  </div>
 
-      const ctx = document.getElementById('trustChart').getContext('2d');
-      const trustChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          datasets: datasets
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: 'x', 
-            intersect: false,
-          },
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                usePointStyle: true,
-                padding: 20,
-                font: {
-                    size: 18
-                }
-              }
-            },
-            tooltip: {
-                usePointStyle: true
-            }
-          },
-          scales: {
-            x: {
-              type: 'time',
-              time: {
-                tooltipFormat: 'PPpp',
-                displayFormats: {
-                  millisecond: 'HH:mm:ss.SSS',
-                  second: 'HH:mm:ss',
-                  minute: 'HH:mm',
-                  hour: 'MMM dd HH:mm'
-                }
-              },
-              title: {
-                display: true,
-                text: 'Time of Update (UTC)',
-                font: {
-                    size: 18,
-                    weight: 'bold'
-                }
-              },
-              ticks: {
-                font: {
-                    size: 18
-                },
-                maxTicksLimit: 8,
-                maxRotation: 0,
-                autoSkip: true
-              },
-              grid: {
-                display: true,
-                drawOnChartArea: true,
-              }
-            },
-            y: {
-              min: 0,
-              max: 1.05,
-              title: {
-                display: true,
-                text: 'Trust Value (0-1)',
-                font: {
-                    size: 18,
-                    weight: 'bold'
-                }
-              },
-              ticks: {
-                font: {
-                    size: 18
-                },
-                stepSize: 0.1
-              }
-            }
-          }
-        }
-      });
-    </script>
-  {% else %}
-    <p><em>No trust update logs available for this run.</em></p>
-  {% endif %}
+  <div class="tab-pane fade" id="debug">
+    <table class="table table-sm table-striped">
+      <thead>
+          <tr>
+              <th>HCP</th>
+              <th>Metric</th>
+              <th>Alpha (Dirichlet)</th>
+          </tr>
+      </thead>
+      <tbody>
+          {% for s in states %}
+          <tr>
+              <td>{{ s.hcp.name if s.hcp else s.hcp_id }}</td>
+              <td>{{ s.metric.name if s.metric else s.metric_id }}</td>
+              <td><code>{{ s.alpha }}</code></td>
+          </tr>
+          {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 
+{% if chart_data %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
+  const rawData = {{ chart_data | tojson }};
+  const colors = [
+    '#000000', '#e6194b', '#3cb44b', '#000080', '#f58231', '#911eb4', '#46f0f0', '#f032e6',
+    '#800000', '#008080', '#808000', '#aa6e28', '#aaffc3', '#0000FF', '#FFD700', '#808080'
+  ];
+  const styles = ['circle', 'triangle', 'rect', 'rectRot', 'cross', 'star', 'dash', 'line'];
+
+  const datasets = Object.keys(rawData).map((sourceName, index) => {
+    return {
+      label: sourceName,
+      data: rawData[sourceName],
+      borderColor: colors[index % colors.length],
+      backgroundColor: 'transparent',
+      pointStyle: styles[index % styles.length],
+      fill: false,
+      stepped: 'before',
+      borderWidth: 2,
+      pointRadius: 6,
+      pointHoverRadius: 8
+    };
+  });
+
+  const ctx = document.getElementById('trustChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: { datasets: datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'x', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+      },
+      scales: {
+        x: { type: 'time', time: { unit: 'minute' }, title: { display: true, text: 'Time (UTC)' } },
+        y: { min: 0, max: 1.05, title: { display: true, text: 'Trust Value' } }
+      }
+    }
+  });
+</script>
+{% endif %}
 {% endblock %}
