@@ -32,7 +32,6 @@
 </ul>
 
 <div class="tab-content">
-  
   <div class="tab-pane fade show active" id="scores">
     <div class="row">
       <div class="col-md-6">
@@ -161,8 +160,8 @@
       fill: false,
       stepped: 'before',
       borderWidth: 2,
-      pointRadius: 6,
-      pointHoverRadius: 8
+      pointRadius: 10,
+      pointHoverRadius: 12
     };
   });
 
@@ -172,17 +171,71 @@
     data: { datasets: datasets },
     options: {
       responsive: true,
-      maintainAspectRatio: false,
+      maintainAspectRatio: true,
+      aspectRatio: 2,
+      devicePixelRatio: 3,
       interaction: { mode: 'x', intersect: false },
       plugins: {
-        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+        legend: { 
+            position: 'bottom', 
+            labels: { usePointStyle: true, padding: 20, font: { weight: 'bold', size: 26 } } 
+        }
       },
       scales: {
-        x: { type: 'time', time: { unit: 'minute' }, title: { display: true, text: 'Time (UTC)' } },
-        y: { min: 0, max: 1.05, title: { display: true, text: 'Trust Value' } }
+        x: { 
+          type: 'time', 
+          time: { 
+            unit: 'second', 
+            stepSize: 3,
+            displayFormats: {
+              second: 'HH:mm:ss'
+            }
+          },
+          ticks: {
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 10,
+            font: {
+                weight: 'bold',
+                size: 22
+            }
+          },
+          title: { 
+            display: true, 
+            text: 'Time of Update (UTC)', 
+            font: { weight: 'bold', size: 24 } 
+          } 
+        },
+        y: { 
+          min: 0, 
+          max: 1.1, 
+          ticks: {
+            stepSize: 0.1,
+            font: {
+                weight: 'bold',
+                size: 22
+            }
+          },
+          title: { 
+            display: true, 
+            text: 'Trust Value (0-1)', 
+            font: { weight: 'bold', size: 24 } 
+          } 
+        }
       }
     }
   });
 </script>
+{% endif %}
+{% if run.status != 'completed' %}
+<script>
+    setTimeout(function(){
+       window.location.reload(1);
+    }, 5000);
+</script>
+<div class="alert alert-info mt-3">
+    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+    Evaluation in progress... This page will refresh automatically.
+</div>
 {% endif %}
 {% endblock %}
