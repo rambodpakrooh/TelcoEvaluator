@@ -194,17 +194,20 @@ def create_app():
 
         logs = SourceTrustLog.query.filter_by(evaluation_run_id=run_id).order_by(SourceTrustLog.updated_at).all()
 
+        unique_times = sorted(list(set(log.updated_at for log in logs)))
+        time_to_step = {t: i + 1 for i, t in enumerate(unique_times)}
+
         chart_data = {}
         for log in logs:
             s_name = log.source.name
             if s_name not in chart_data:
                 chart_data[s_name] = [{
-                    "x": run.created_at.isoformat(),
+                    "x": 0,
                     "y": log.old_trust
                 }]
 
             chart_data[s_name].append({
-                "x": log.updated_at.isoformat(),
+                "x": time_to_step[log.updated_at],
                 "y": log.new_trust
             })
         
@@ -421,4 +424,3 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     app.run(host="0.0.0.0", port=5000, debug=True)
-    

@@ -167,64 +167,58 @@
 
   const ctx = document.getElementById('trustChart').getContext('2d');
   new Chart(ctx, {
-    type: 'line',
-    data: { datasets: datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      aspectRatio: 2,
-      devicePixelRatio: 3,
-      interaction: { mode: 'x', intersect: false },
-      plugins: {
-        legend: { 
-            position: 'bottom', 
-            labels: { usePointStyle: true, padding: 20, font: { weight: 'bold', size: 26 } } 
-        }
-      },
-      scales: {
-        x: { 
-          type: 'time', 
-          time: { 
-            unit: 'second', 
-            stepSize: 3,
-            displayFormats: {
-              second: 'HH:mm:ss'
-            }
-          },
-          ticks: {
-            maxRotation: 0,
-            autoSkip: true,
-            maxTicksLimit: 10,
-            font: {
-                weight: 'bold',
-                size: 22
-            }
-          },
-          title: { 
-            display: true, 
-            text: 'Time of Update (UTC)', 
-            font: { weight: 'bold', size: 24 } 
+  type: 'line',
+  data: { datasets: datasets },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false, // Set to false to ensure labels aren't cut off
+    layout: {
+      padding: {
+        left: 20,
+        bottom: 20 // Extra padding to prevent title dropping
+      }
+    },
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { 
+          position: 'top', 
+          labels: { 
+              usePointStyle: true, // This enables the shapes in the legend
+              padding: 20, 
+              font: { weight: 'bold', size: 18 } 
           } 
+      }
+    },
+    scales: {
+      x: { 
+        type: 'linear',
+        ticks: {
+          stepSize: 5, // Shows every 5th tick (0, 5, 10...) instead of all
+          precision: 0,
+          font: { weight: 'bold', size: 16 }
         },
-        y: { 
-          min: 0, 
-          max: 1.1, 
-          ticks: {
-            stepSize: 0.1,
-            font: {
-                weight: 'bold',
-                size: 22
-            }
-          },
-          title: { 
-            display: true, 
-            text: 'Trust Value (0-1)', 
-            font: { weight: 'bold', size: 24 } 
-          } 
-        }
+        title: { 
+          display: true, 
+          text: 'Metrics/Evidence Batches Processed', 
+          font: { weight: 'bold', size: 20 } 
+        } 
+      },
+      y: { 
+        min: 0, 
+        max: 1.1, 
+        ticks: {
+          stepSize: 0.1,
+          font: { weight: 'bold', size: 16 }
+        },
+        title: { 
+          display: true, 
+          text: 'Trust Value (0-1)', 
+          font: { weight: 'bold', size: 20 } 
+        } 
       }
     }
-  });
+  }
+});
 </script>
 {% endif %}
 {% if run.status != 'completed' %}
